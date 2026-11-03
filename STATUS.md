@@ -1,19 +1,28 @@
-# BRUTA X Status — Phase 3
+# BRUTA X Status — Phase 4 (Professional Edition)
 
-**Version:** 1.2.0-phase3
+**Version:** 1.3.0-phase4
 
 ## Tests
-Run: `python -m unittest tests.test_core tests.test_phase2 tests.test_phase3 -v`
+```bash
+export BRUTA_DB_PATH=/tmp/bruta_test.db   # optional isolation
+python -m unittest tests.test_core tests.test_phase2 tests.test_phase3 tests.test_phase4 -v
+```
+**Result on build host:** 42/42 OK
 
-## Phase 3
-- Plugin architecture + 2 builtins
-- Correlation engine
-- Workflows
-- Jobs / migrations / event bus
-- Visualization data (no fake nodes)
-- UI sections added
+## Phase 4 delivered
+- Interactive graph (QGraphicsView; requires PySide6 at runtime)
+- Themes (5) + local profiles
+- Assets + authorization scope
+- Scan comparison
+- Notifications (secret scrubbing)
+- Unified search
+- Export JSON/HTML/CSV (+ PDF if reportlab)
+- Windows build script/docs
+- DB migrations 005/006
+- BRUTA_DB_PATH override for tests
 
 ## Limits
-- Topology is data-driven lists/JSON (no GPU canvas graph library bundled)
-- PySide6 may be missing on restricted CI hosts
-- No signed Windows installer
+- Graph needs PySide6 display environment
+- Windows exe not produced on this Linux CI host
+- Dashboard widgets are data-backed lists, not a full drag-layout editor
+- No claimed multi-user security isolation

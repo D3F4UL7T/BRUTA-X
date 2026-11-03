@@ -6,6 +6,8 @@ import sqlite3
 from app.config import DB_PATH, ensure_dirs
 from app.services.correlation import init_intel_tables
 from app.services.jobs import init_job_tables
+from app.services.assets import init_asset_tables
+from app.services.notifications import init_notify_tables
 
 
 def migrate() -> list[str]:
@@ -36,5 +38,11 @@ def migrate() -> list[str]:
         if need("004_jobs"):
             init_job_tables(conn)
             mark("004_jobs")
+        if need("005_assets"):
+            init_asset_tables(conn)
+            mark("005_assets")
+        if need("006_notifications"):
+            init_notify_tables(conn)
+            mark("006_notifications")
         conn.commit()
     return applied

@@ -2,17 +2,18 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 APP_NAME = "BRUTA X"
-APP_VERSION = "1.2.0-phase3"
+APP_VERSION = "1.3.0-phase4"
 PUBLISHER = "BRUTA Technologies"
 
 # Paths relative to user data / project
 PACKAGE_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = PACKAGE_ROOT / "data"
 SETTINGS_PATH = DATA_DIR / "settings.json"
-DB_PATH = DATA_DIR / "bruta_x.db"
+DB_PATH = Path(os.environ["BRUTA_DB_PATH"]) if os.environ.get("BRUTA_DB_PATH") else DATA_DIR / "bruta_x.db"
 LOG_DIR = DATA_DIR / "logs"
 
 DEFAULT_SETTINGS = {

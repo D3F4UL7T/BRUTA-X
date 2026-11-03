@@ -18,7 +18,10 @@ from PySide6.QtWidgets import (
 
 from app import __version__
 from app.config import APP_NAME, PUBLISHER, save_settings
+from app.services.profiles import get_theme
+from app.ui.themes import build_stylesheet
 from app.ui.sidebar import Sidebar
+from app.ui.graph_view import InteractiveGraphPage
 from app.ui.pages import (
     DashboardPage,
     DnsPage,
@@ -37,6 +40,11 @@ from app.ui.pages import (
     AutomationPage,
     TaskManagerPage,
     AnalyticsPage,
+    AssetsPage,
+    ComparePage,
+    NotifyPage,
+    SearchPage,
+    ExportCenterPage,
 )
 
 
@@ -46,6 +54,10 @@ class MainWindow(QMainWindow):
         self.settings = settings
         self.log = logger
         self.setWindowTitle(f"{APP_NAME} · {PUBLISHER}")
+        try:
+            self.setStyleSheet(build_stylesheet(get_theme()))
+        except Exception:
+            pass
         self.resize(int(settings.get("window_width", 1280)), int(settings.get("window_height", 800)))
 
         root = QWidget()
@@ -70,8 +82,13 @@ class MainWindow(QMainWindow):
         # pages
         self.pages = {
             "dashboard": DashboardPage(),
+            "assets": AssetsPage(),
+            "compare": ComparePage(),
+            "notify": NotifyPage(),
+            "search": SearchPage(),
+            "export": ExportCenterPage(),
             "plugins": PluginCenterPage(),
-            "intel": IntelGraphPage(),
+            "intel": InteractiveGraphPage() if InteractiveGraphPage is not None else IntelGraphPage(),
             "auto": AutomationPage(),
             "tasks": TaskManagerPage(),
             "analytics": AnalyticsPage(),
@@ -114,6 +131,11 @@ class MainWindow(QMainWindow):
             "auto": "Automation Studio",
             "tasks": "Task Manager",
             "analytics": "Security Analytics",
+            "export": "Export Center",
+            "search": "Search",
+            "notify": "Notifications",
+            "compare": "Scan Compare",
+            "assets": "Assets",
             "osint": "OSINT",
             "dns": "DNS Intelligence",
             "network": "Network Scanner",

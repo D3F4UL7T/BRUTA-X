@@ -13,7 +13,8 @@ def create_app():
     """Create QApplication + main window. Requires PySide6."""
     from PySide6.QtWidgets import QApplication
     from app.ui.main_window import MainWindow
-    from app.ui.theme import STYLESHEET
+    from app.ui.themes import build_stylesheet
+from app.services.profiles import get_theme
 
     ensure_dirs()
     init_db()
@@ -22,7 +23,7 @@ def create_app():
     settings = load_settings()
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
-    app.setStyleSheet(STYLESHEET)
+    app.setStyleSheet(build_stylesheet(get_theme()))
     win = MainWindow(settings=settings, logger=log)
     win.show()
     log.info("BRUTA X UI started")

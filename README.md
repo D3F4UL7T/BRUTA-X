@@ -3,7 +3,7 @@
 Professional modular cybersecurity desktop toolkit.
 
 **Publisher:** BRUTA Technologies  
-**Version:** 1.2.0-phase3  
+**Version:** 1.3.0-phase4  
 **Platform:** Windows 10/11 (also runs on Linux with PySide6)  
 **Language:** Python 3.12+  
 **GUI:** PySide6
@@ -92,3 +92,7 @@ bruta_x/
 ## License / use
 
 Authorized testing and lab use only. You are responsible for compliance with local law and target authorization.
+
+## Phase 4
+See STATUS.md, USER_GUIDE.md, WINDOWS_BUILD.md, PHASE4_CHANGELOG.md.
+

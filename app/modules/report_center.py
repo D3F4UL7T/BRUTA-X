@@ -109,3 +109,17 @@ def export_pdf(path: str, run_id: int | None = None) -> str:
         y -= 18
     c.save()
     return str(P(path).resolve())
+
+
+def export_csv(path: str, run_id: int | None = None) -> str:
+    import csv
+    from pathlib import Path as P
+    payload = build_report_payload(run_id)
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["id", "ts", "module", "target", "status", "summary"])
+        for run in payload.get("runs") or []:
+            if not run:
+                continue
+            w.writerow([run.get("id"), run.get("ts"), run.get("module"), run.get("target"), run.get("status"), run.get("summary")])
+    return str(P(path).resolve())

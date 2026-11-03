@@ -715,3 +715,168 @@ class AnalyticsPage(QWidget):
     def on_show(self):
         import json
         self.out.setPlainText(json.dumps(self._sum(), indent=2, default=str)[:100000])
+
+
+class AssetsPage(QWidget):
+    def __init__(self):
+        super().__init__()
+        from app.services.assets import add_asset, list_assets
+        self._add, self._list = add_asset, list_assets
+        lay = QVBoxLayout(self)
+        form = QFormLayout()
+        self.type = QLineEdit("domain")
+        self.value = QLineEdit()
+        self.auth = QCheckBox("Mark as authorized for assessment")
+        self.scope = QLineEdit()
+        self.scope.setPlaceholderText("auth scope note")
+        form.addRow("Type", self.type)
+        form.addRow("Value", self.value)
+        form.addRow("Scope", self.scope)
+        form.addRow("", self.auth)
+        lay.addLayout(form)
+        row = QHBoxLayout()
+        addb = QPushButton("Add asset")
+        addb.setObjectName("Primary")
+        addb.clicked.connect(self._add_row)
+        ref = QPushButton("Refresh")
+        ref.clicked.connect(self.refresh)
+        row.addWidget(addb)
+        row.addWidget(ref)
+        lay.addLayout(row)
+        self.table = QTableWidget(0, 6)
+        self.table.setHorizontalHeaderLabels(["ID", "Type", "Value", "Authorized", "Project", "Scope"])
+        self.table.horizontalHeader().setStretchLastSection(True)
+        lay.addWidget(self.table)
+
+    def on_show(self):
+        self.refresh()
+
+    def refresh(self):
+        rows = self._list()
+        self.table.setRowCount(len(rows))
+        for i, a in enumerate(rows):
+            for j, k in enumerate(("id", "type", "value", "authorized", "project", "auth_scope")):
+                self.table.setItem(i, j, QTableWidgetItem(str(a.get(k) or "")))
+
+    def _add_row(self):
+        if not self.value.text().strip():
+            QMessageBox.warning(self, "Assets", "Value required")
+            return
+        self._add(
+            self.type.text().strip() or "domain",
+            self.value.text().strip(),
+            authorized=self.auth.isChecked(),
+            auth_scope=self.scope.text().strip(),
+        )
+        self.refresh()
+
+
+class ComparePage(QWidget):
+    def __init__(self):
+        super().__init__()
+        from app.services.compare import compare_scans
+        self._cmp = compare_scans
+        lay = QVBoxLayout(self)
+        form = QFormLayout()
+        self.a = QLineEdit()
+        self.b = QLineEdit()
+        form.addRow("Run ID A", self.a)
+        form.addRow("Run ID B", self.b)
+        lay.addLayout(form)
+        btn = QPushButton("Compare")
+        btn.setObjectName("Primary")
+        btn.clicked.connect(self._go)
+        lay.addWidget(btn)
+        self.out = QPlainTextEdit()
+        self.out.setReadOnly(True)
+        lay.addWidget(self.out)
+
+    def _go(self):
+        import json
+        try:
+            ra, rb = int(self.a.text()), int(self.b.text())
+        except ValueError:
+            QMessageBox.warning(self, "Compare", "Run IDs must be integers")
+            return
+        self.out.setPlainText(json.dumps(self._cmp(ra, rb), indent=2, default=str)[:100000])
+
+
+class NotifyPage(QWidget):
+    def __init__(self):
+        super().__init__()
+        from app.services.notifications import list_notifications, mark_read
+        self._list, self._read = list_notifications, mark_read
+        lay = QVBoxLayout(self)
+        self.table = QTableWidget(0, 5)
+        self.table.setHorizontalHeaderLabels(["ID", "Time", "Category", "Title", "Read"])
+        self.table.horizontalHeader().setStretchLastSection(True)
+        lay.addWidget(self.table)
+        btn = QPushButton("Mark selected read")
+        btn.setObjectName("Primary")
+        btn.clicked.connect(self._mark)
+        lay.addWidget(btn)
+
+    def on_show(self):
+        rows = self._list()
+        self.table.setRowCount(len(rows))
+        for i, n in enumerate(rows):
+            for j, k in enumerate(("id", "ts", "category", "title", "read")):
+                self.table.setItem(i, j, QTableWidgetItem(str(n.get(k))))
+
+    def _mark(self):
+        r = self.table.currentRow()
+        if r < 0:
+            return
+        self._read(int(self.table.item(r, 0).text()))
+        self.on_show()
+
+
+class SearchPage(QWidget):
+    def __init__(self):
+        super().__init__()
+        from app.services.search import search
+        self._search = search
+        lay = QVBoxLayout(self)
+        row = QHBoxLayout()
+        self.q = QLineEdit()
+        btn = QPushButton("Search")
+        btn.setObjectName("Primary")
+        btn.clicked.connect(self._go)
+        row.addWidget(self.q, 1)
+        row.addWidget(btn)
+        lay.addLayout(row)
+        self.out = QPlainTextEdit()
+        self.out.setReadOnly(True)
+        lay.addWidget(self.out)
+
+    def _go(self):
+        import json
+        self.out.setPlainText(json.dumps(self._search(self.q.text()), indent=2, default=str)[:100000])
+
+
+class ExportCenterPage(QWidget):
+    def __init__(self):
+        super().__init__()
+        from app.modules.report_center import export_csv, export_html, export_json
+        self._json, self._html, self._csv = export_json, export_html, export_csv
+        lay = QVBoxLayout(self)
+        for label, fn, filt in (
+            ("Export JSON", self._json, "JSON (*.json)"),
+            ("Export HTML", self._html, "HTML (*.html)"),
+            ("Export CSV", self._csv, "CSV (*.csv)"),
+        ):
+            b = QPushButton(label)
+            b.setObjectName("Primary")
+            b.clicked.connect(lambda checked=False, f=fn, fl=filt: self._do(f, fl))
+            lay.addWidget(b)
+        lay.addStretch(1)
+
+    def _do(self, fn, filt):
+        path, _ = QFileDialog.getSaveFileName(self, "Export", "bruta_export", filt)
+        if not path:
+            return
+        try:
+            out = fn(path)
+            QMessageBox.information(self, "Export", f"Wrote {out}")
+        except Exception as e:
+            QMessageBox.warning(self, "Export", str(e))
