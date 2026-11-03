@@ -1,0 +1,11 @@
+{
+  "id": "builtin_dns_info",
+  "name": "DNS Info Plugin",
+  "description": "Exposes DNS resolution via plugin action dns.lookup",
+  "version": "1.0.0",
+  "author": "BRUTA Technologies",
+  "min_app_version": "1.2.0",
+  "permissions": ["net.dns.read"],
+  "entry": "plugin.py",
+  "enabled_by_default": false
+}

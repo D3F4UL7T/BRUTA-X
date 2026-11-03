@@ -6,6 +6,11 @@ from PySide6.QtWidgets import QFrame, QLabel, QPushButton, QVBoxLayout
 
 NAV = [
     ("dashboard", "Dashboard"),
+    ("plugins", "Plugin Center"),
+    ("intel", "Intelligence Graph"),
+    ("auto", "Automation Studio"),
+    ("tasks", "Task Manager"),
+    ("analytics", "Security Analytics"),
     ("osint", "OSINT"),
     ("dns", "DNS Intelligence"),
     ("network", "Network Scanner"),

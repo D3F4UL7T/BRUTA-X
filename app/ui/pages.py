@@ -550,3 +550,168 @@ class AIPage(QWidget):
             use_remote=self.remote.isChecked(),
         )
         self.out.setPlainText(f"[{result.get('mode')}]\n{result.get('text')}")
+
+
+class PluginCenterPage(QWidget):
+    def __init__(self):
+        super().__init__()
+        from pathlib import Path as P
+        from app.config import DATA_DIR, PACKAGE_ROOT
+        from app.plugins.loader import PluginManager
+        self.mgr = PluginManager(
+            [PACKAGE_ROOT / "plugins"],
+            DATA_DIR / "plugins_state.json",
+        )
+        self.mgr.discover()
+        lay = QVBoxLayout(self)
+        note = QLabel("Plugins stay disabled until you explicitly enable them.")
+        note.setObjectName("Subtitle")
+        lay.addWidget(note)
+        self.table = QTableWidget(0, 5)
+        self.table.setHorizontalHeaderLabels(["ID", "Name", "Version", "Enabled", "Error"])
+        self.table.horizontalHeader().setStretchLastSection(True)
+        lay.addWidget(self.table)
+        row = QHBoxLayout()
+        en = QPushButton("Enable selected")
+        dis = QPushButton("Disable selected")
+        en.setObjectName("Primary")
+        en.clicked.connect(lambda: self._set(True))
+        dis.clicked.connect(lambda: self._set(False))
+        row.addWidget(en)
+        row.addWidget(dis)
+        lay.addLayout(row)
+        self.refresh()
+
+    def refresh(self):
+        self.mgr.discover()
+        items = self.mgr.list_plugins()
+        self.table.setRowCount(len(items))
+        for i, p in enumerate(items):
+            self.table.setItem(i, 0, QTableWidgetItem(p.get("id", "")))
+            self.table.setItem(i, 1, QTableWidgetItem(p.get("name", "")))
+            self.table.setItem(i, 2, QTableWidgetItem(p.get("version", "")))
+            self.table.setItem(i, 3, QTableWidgetItem(str(p.get("enabled"))))
+            self.table.setItem(i, 4, QTableWidgetItem(p.get("error") or ""))
+
+    def on_show(self):
+        self.refresh()
+
+    def _set(self, enabled: bool):
+        row = self.table.currentRow()
+        if row < 0:
+            QMessageBox.warning(self, "Plugins", "Select a plugin row")
+            return
+        pid = self.table.item(row, 0).text()
+        try:
+            self.mgr.set_enabled(pid, enabled, user_approved=True)
+            if enabled:
+                self.mgr.load(pid)
+            QMessageBox.information(self, "Plugins", f"{pid} enabled={enabled}")
+        except Exception as e:
+            QMessageBox.warning(self, "Plugins", str(e))
+        self.refresh()
+
+
+class IntelGraphPage(QWidget):
+    def __init__(self):
+        super().__init__()
+        from app.services.correlation import graph_payload, risk_summary
+        self._graph = graph_payload
+        self._risk = risk_summary
+        lay = QVBoxLayout(self)
+        self.summary = QLabel()
+        self.summary.setObjectName("Subtitle")
+        lay.addWidget(self.summary)
+        self.out = QPlainTextEdit()
+        self.out.setReadOnly(True)
+        lay.addWidget(self.out)
+        btn = QPushButton("Refresh graph data")
+        btn.setObjectName("Primary")
+        btn.clicked.connect(self.refresh)
+        lay.addWidget(btn)
+
+    def on_show(self):
+        self.refresh()
+
+    def refresh(self):
+        import json
+        risk = self._risk()
+        self.summary.setText(
+            f"Entities={risk.get('entities')}  Relationships={risk.get('relationships')}  Findings={risk.get('finding_entities')}"
+        )
+        g = self._graph()
+        self.out.setPlainText(json.dumps(g, indent=2)[:100000])
+
+
+class AutomationPage(QWidget):
+    def __init__(self):
+        super().__init__()
+        from app.services.workflows import example_domain_workflow, run_workflow
+        self._example = example_domain_workflow
+        self._run = run_workflow
+        lay = QVBoxLayout(self)
+        form = QFormLayout()
+        self.domain = QLineEdit("example.com")
+        self.auth = QCheckBox("I authorize this workflow against the target")
+        form.addRow("Domain", self.domain)
+        form.addRow("", self.auth)
+        lay.addLayout(form)
+        btn = QPushButton("Run domain workflow")
+        btn.setObjectName("Primary")
+        btn.clicked.connect(self._go)
+        lay.addWidget(btn)
+        self.out = QPlainTextEdit()
+        self.out.setReadOnly(True)
+        lay.addWidget(self.out)
+
+    def _go(self):
+        import json
+        wf = self._example(self.domain.text().strip())
+        result = self._run(wf, authorized=self.auth.isChecked())
+        self.out.setPlainText(json.dumps(result, indent=2, default=str)[:100000])
+
+
+class TaskManagerPage(QWidget):
+    def __init__(self):
+        super().__init__()
+        from app.services.jobs import JobManager
+        self.jobs = JobManager(max_workers=2)
+        lay = QVBoxLayout(self)
+        self.table = QTableWidget(0, 5)
+        self.table.setHorizontalHeaderLabels(["ID", "Name", "Status", "Created", "Error"])
+        self.table.horizontalHeader().setStretchLastSection(True)
+        lay.addWidget(self.table)
+        row = QHBoxLayout()
+        ref = QPushButton("Refresh")
+        ref.setObjectName("Primary")
+        ref.clicked.connect(self.refresh)
+        row.addWidget(ref)
+        lay.addLayout(row)
+
+    def on_show(self):
+        self.refresh()
+
+    def refresh(self):
+        items = self.jobs.list_jobs()
+        self.table.setRowCount(len(items))
+        for i, j in enumerate(items):
+            self.table.setItem(i, 0, QTableWidgetItem(str(j.get("id"))))
+            self.table.setItem(i, 1, QTableWidgetItem(str(j.get("name"))))
+            self.table.setItem(i, 2, QTableWidgetItem(str(j.get("status"))))
+            self.table.setItem(i, 3, QTableWidgetItem(str(j.get("created_at"))))
+            self.table.setItem(i, 4, QTableWidgetItem(str(j.get("error") or "")))
+
+
+class AnalyticsPage(QWidget):
+    def __init__(self):
+        super().__init__()
+        from app.services.visualization import analytics_summary
+        self._sum = analytics_summary
+        lay = QVBoxLayout(self)
+        self.out = QPlainTextEdit()
+        self.out.setReadOnly(True)
+        lay.addWidget(self.out)
+
+    def on_show(self):
+        import json
+        self.out.setPlainText(json.dumps(self._sum(), indent=2, default=str)[:100000])

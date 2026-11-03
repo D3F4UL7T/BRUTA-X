@@ -3,7 +3,7 @@
 Professional modular cybersecurity desktop toolkit.
 
 **Publisher:** BRUTA Technologies  
-**Version:** 1.1.0-phase2  
+**Version:** 1.2.0-phase3  
 **Platform:** Windows 10/11 (also runs on Linux with PySide6)  
 **Language:** Python 3.12+  
 **GUI:** PySide6

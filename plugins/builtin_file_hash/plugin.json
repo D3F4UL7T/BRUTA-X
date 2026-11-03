@@ -1,0 +1,11 @@
+{
+  "id": "builtin_file_hash",
+  "name": "File Hash Plugin",
+  "description": "SHA-256/512 hashing via plugin action file.hash",
+  "version": "1.0.0",
+  "author": "BRUTA Technologies",
+  "min_app_version": "1.2.0",
+  "permissions": ["fs.hash.read"],
+  "entry": "plugin.py",
+  "enabled_by_default": false
+}

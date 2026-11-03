@@ -5,6 +5,7 @@ import sys
 
 from app.config import APP_NAME, ensure_dirs, load_settings
 from app.database import init_db
+from app.services.migrations import migrate
 from app.logging_config import setup_logging
 
 
@@ -16,6 +17,7 @@ def create_app():
 
     ensure_dirs()
     init_db()
+    migrate()
     log = setup_logging()
     settings = load_settings()
     app = QApplication(sys.argv)

@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 APP_NAME = "BRUTA X"
-APP_VERSION = "1.1.0-phase2"
+APP_VERSION = "1.2.0-phase3"
 PUBLISHER = "BRUTA Technologies"
 
 # Paths relative to user data / project

@@ -32,6 +32,11 @@ from app.ui.pages import (
     VulnPage,
     NetMonPage,
     AIPage,
+    PluginCenterPage,
+    IntelGraphPage,
+    AutomationPage,
+    TaskManagerPage,
+    AnalyticsPage,
 )
 
 
@@ -65,6 +70,11 @@ class MainWindow(QMainWindow):
         # pages
         self.pages = {
             "dashboard": DashboardPage(),
+            "plugins": PluginCenterPage(),
+            "intel": IntelGraphPage(),
+            "auto": AutomationPage(),
+            "tasks": TaskManagerPage(),
+            "analytics": AnalyticsPage(),
             "osint": OsintPage(),
             "dns": DnsPage(),
             "network": NetworkScanPage(),
@@ -99,6 +109,11 @@ class MainWindow(QMainWindow):
         self.stack.setCurrentIndex(idx)
         titles = {
             "dashboard": "Dashboard",
+            "plugins": "Plugin Center",
+            "intel": "Intelligence Graph",
+            "auto": "Automation Studio",
+            "tasks": "Task Manager",
+            "analytics": "Security Analytics",
             "osint": "OSINT",
             "dns": "DNS Intelligence",
             "network": "Network Scanner",
