@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 
 APP_NAME = "BRUTA X"
-APP_VERSION = "1.3.0-phase4"
+APP_VERSION = "1.5.0-enterprise"
 PUBLISHER = "BRUTA Technologies"
 
 # Paths relative to user data / project
