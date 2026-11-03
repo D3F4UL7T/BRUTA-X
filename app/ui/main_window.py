@@ -17,7 +17,8 @@ from PySide6.QtWidgets import (
 )
 
 from app import __version__
-from app.config import APP_NAME, PUBLISHER, save_settings
+from app.config import APP_NAME, PUBLISHER, save_settings, APP_VERSION
+from app.services.license import license_status
 from app.services.profiles import get_theme
 from app.ui.themes import build_stylesheet
 from app.ui.sidebar import Sidebar
@@ -45,6 +46,11 @@ from app.ui.pages import (
     NotifyPage,
     SearchPage,
     ExportCenterPage,
+    AuditPage,
+    ProjectsPage,
+    BackupPage,
+    LicensePage,
+    SettingsPage,
 )
 
 
@@ -87,6 +93,11 @@ class MainWindow(QMainWindow):
             "notify": NotifyPage(),
             "search": SearchPage(),
             "export": ExportCenterPage(),
+            "projects": ProjectsPage(),
+            "audit": AuditPage(),
+            "backup": BackupPage(),
+            "license": LicensePage(),
+            "settings": SettingsPage(),
             "plugins": PluginCenterPage(),
             "intel": InteractiveGraphPage() if InteractiveGraphPage is not None else IntelGraphPage(),
             "auto": AutomationPage(),
@@ -132,6 +143,11 @@ class MainWindow(QMainWindow):
             "tasks": "Task Manager",
             "analytics": "Security Analytics",
             "export": "Export Center",
+            "settings": "Settings",
+            "license": "License",
+            "backup": "Backup",
+            "audit": "Audit Trail",
+            "projects": "Projects",
             "search": "Search",
             "notify": "Notifications",
             "compare": "Scan Compare",
@@ -161,9 +177,10 @@ class MainWindow(QMainWindow):
             f"About {APP_NAME}",
             f"<b>{APP_NAME}</b><br>"
             f"Version {__version__}<br>"
-            f"Publisher: {PUBLISHER}<br><br>"
+            f"Publisher: {PUBLISHER}<br>"
+            f"Edition: {license_status().get('name', 'n/a')}<br><br>"
             "Professional modular cybersecurity toolkit for authorized use.<br>"
-            "Phase 1: shell + DNS, files, passwords, network/port scanners, reports.",
+            "Enterprise toolkit · local RBAC · authorized assessments only.<br>See LICENSE / SECURITY.md. No fabricated scan data.",
         )
 
     def closeEvent(self, event) -> None:  # noqa: N802

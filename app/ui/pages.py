@@ -880,3 +880,139 @@ class ExportCenterPage(QWidget):
             QMessageBox.information(self, "Export", f"Wrote {out}")
         except Exception as e:
             QMessageBox.warning(self, "Export", str(e))
+
+
+class AuditPage(QWidget):
+    def __init__(self):
+        super().__init__()
+        from app.services.audit import list_audit
+        self._list = list_audit
+        lay = QVBoxLayout(self)
+        note = QLabel("Audit trail — secrets are redacted. OWNER/ADMIN access in production policy.")
+        note.setObjectName("Subtitle")
+        note.setWordWrap(True)
+        lay.addWidget(note)
+        self.table = QTableWidget(0, 6)
+        self.table.setHorizontalHeaderLabels(["ID", "Time", "Actor", "Action", "Resource", "Result"])
+        self.table.horizontalHeader().setStretchLastSection(True)
+        lay.addWidget(self.table)
+        btn = QPushButton("Refresh")
+        btn.setObjectName("Primary")
+        btn.clicked.connect(self.on_show)
+        lay.addWidget(btn)
+
+    def on_show(self):
+        rows = self._list(limit=200)
+        self.table.setRowCount(len(rows))
+        for i, r in enumerate(rows):
+            for j, k in enumerate(("id", "ts", "actor", "action", "resource", "result")):
+                self.table.setItem(i, j, QTableWidgetItem(str(r.get(k) or "")))
+
+
+class ProjectsPage(QWidget):
+    def __init__(self):
+        super().__init__()
+        from app.services.projects import create_project, list_projects
+        self._create, self._list = create_project, list_projects
+        lay = QVBoxLayout(self)
+        row = QHBoxLayout()
+        self.name = QLineEdit()
+        self.name.setPlaceholderText("Project name")
+        add = QPushButton("Create")
+        add.setObjectName("Primary")
+        add.clicked.connect(self._add)
+        row.addWidget(self.name, 1)
+        row.addWidget(add)
+        lay.addLayout(row)
+        self.table = QTableWidget(0, 4)
+        self.table.setHorizontalHeaderLabels(["ID", "Name", "Description", "Archived"])
+        self.table.horizontalHeader().setStretchLastSection(True)
+        lay.addWidget(self.table)
+
+    def on_show(self):
+        rows = self._list(include_archived=True)
+        self.table.setRowCount(len(rows))
+        for i, r in enumerate(rows):
+            for j, k in enumerate(("id", "name", "description", "archived")):
+                self.table.setItem(i, j, QTableWidgetItem(str(r.get(k) or "")))
+
+    def _add(self):
+        n = self.name.text().strip()
+        if not n:
+            QMessageBox.warning(self, "Projects", "Name required")
+            return
+        self._create(n, actor="owner")
+        self.name.clear()
+        self.on_show()
+
+
+class BackupPage(QWidget):
+    def __init__(self):
+        super().__init__()
+        from app.services.backup import create_backup, verify_backup
+        self._create, self._verify = create_backup, verify_backup
+        lay = QVBoxLayout(self)
+        b = QPushButton("Create backup now")
+        b.setObjectName("Primary")
+        b.clicked.connect(self._run)
+        lay.addWidget(b)
+        self.out = QPlainTextEdit()
+        self.out.setReadOnly(True)
+        lay.addWidget(self.out)
+
+    def _run(self):
+        import json
+        meta = self._create()
+        v = self._verify(meta["file"])
+        self.out.setPlainText(json.dumps({"backup": meta, "verify": v}, indent=2))
+
+
+class LicensePage(QWidget):
+    def __init__(self):
+        super().__init__()
+        from app.services.license import license_status
+        self._st = license_status
+        lay = QVBoxLayout(self)
+        self.out = QPlainTextEdit()
+        self.out.setReadOnly(True)
+        lay.addWidget(self.out)
+
+    def on_show(self):
+        import json
+        self.out.setPlainText(json.dumps(self._st(), indent=2))
+
+
+class SettingsPage(QWidget):
+    def __init__(self):
+        super().__init__()
+        from app.ui.themes import list_themes, build_stylesheet
+        from app.services.profiles import upsert_profile, get_active, set_active, get_theme
+        self._themes = list_themes
+        lay = QVBoxLayout(self)
+        form = QFormLayout()
+        self.theme = QLineEdit(get_theme())
+        form.addRow("Theme id", self.theme)
+        lay.addLayout(form)
+        note = QLabel("Themes: " + ", ".join(list_themes()))
+        note.setObjectName("Subtitle")
+        note.setWordWrap(True)
+        lay.addWidget(note)
+        btn = QPushButton("Apply theme to profile")
+        btn.setObjectName("Primary")
+        btn.clicked.connect(self._apply)
+        lay.addWidget(btn)
+        lay.addStretch(1)
+        self._build = build_stylesheet
+        self._upsert = upsert_profile
+
+    def _apply(self):
+        tid = self.theme.text().strip()
+        if tid not in self._themes():
+            QMessageBox.warning(self, "Settings", "Unknown theme id")
+            return
+        self._upsert("default", {"theme": tid})
+        try:
+            self.window().setStyleSheet(self._build(tid))
+        except Exception:
+            pass
+        QMessageBox.information(self, "Settings", f"Theme set to {tid}")

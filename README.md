@@ -1,44 +1,50 @@
 # BRUTA X
 
-Professional modular cybersecurity desktop toolkit.
-
 **Publisher:** BRUTA Technologies  
-**Version:** 1.3.0-phase4  
-**Platform:** Windows 10/11 (also runs on Linux with PySide6)  
-**Language:** Python 3.12+  
-**GUI:** PySide6
+**Version:** 1.5.0-enterprise  
+**Platform:** Windows 10/11 (also runs on Linux with dependencies)  
+**Stack:** Python 3.12+ · PySide6 · SQLite
 
-## Implemented (Phase 1)
+Professional modular cybersecurity desktop toolkit for **authorized** assessment, OSINT, reporting, and local enterprise controls.
 
-| Module | Status |
-|--------|--------|
-| Application shell + sidebar navigation | Done |
-| Dashboard (real system info + SQLite history) | Done |
-| File Analyzer (SHA-256/512, metadata) | Done |
-| Password Auditor (local only, never stored) | Done |
-| DNS Intelligence | Done (dnspython if installed, else stdlib A/AAAA) |
-| Network Scanner (private ranges, auth required) | Done |
-| Port Scanner (TCP connect, auth required) | Done |
-| Report Center (JSON + HTML from real runs) | Done |
-| OSINT IP lookup | Done (public API when network allows) |
-| Vulnerability Checks | Not implemented |
-| Network Monitor | Not implemented |
-| OSINT (username, RDAP, SSL, CT subdomains) | Done |
-| Vulnerability assessment (non-destructive) | Done |
-| Network monitor (connections / iface stats) | Done |
-| AI Assistant (offline + optional remote) | Done |
-| PDF reports (reportlab) | Done |
+## Features (implemented)
+
+### Core assessments
+- File analyzer (SHA-256/512, metadata)
+- Password auditor (local only — never stored or logged)
+- DNS intelligence
+- Port scanner (TCP connect, auth required)
+- Private-network reachability (public ranges blocked by default)
+- Vulnerability checks (headers, TLS, cookies, listings — non-destructive)
+- Network connection monitor
+- OSINT: IP geo, username presence, RDAP, SSL cert, CT subdomains
+
+### Platform
+- Plugin system (explicit enable; allow-listed permissions)
+- Intelligence correlation (evidence-backed graph data)
+- Interactive graph (QGraphicsView when PySide6 available)
+- Workflows + job queue
+- Assets with authorization scope
+- Scan comparison, notifications, unified search
+- Themes (5) + local profiles
+- Exports: JSON, HTML, CSV, PDF (reportlab optional)
+
+### Enterprise
+- RBAC: OWNER / ADMINISTRATOR / ANALYST / VIEWER (PBKDF2 passwords)
+- Audit trail (secret redaction)
+- Project workspaces + membership
+- Local REST API (**disabled by default**, localhost only)
+- Webhooks (HTTPS + SSRF protections)
+- Backup / restore with integrity hash
+- Offline edition configuration (Community / Professional / Enterprise)
 
 ## Install
 
 ```bash
 cd bruta_x
 python -m venv .venv
-# Windows:
-.venv\Scripts\activate
-# Linux/macOS:
+# Windows: .venv\Scripts\activate
 source .venv/bin/activate
-
 pip install -r requirements.txt
 ```
 
@@ -48,51 +54,38 @@ pip install -r requirements.txt
 python main.py
 ```
 
-## Tests
+First run may create `data/owner_bootstrap.txt` with the initial owner password — change it.
+
+## Test
 
 ```bash
-python -m unittest tests.test_core -v
+export BRUTA_DB_PATH=/tmp/bruta_test.db   # optional isolation
+python -m unittest discover -s tests -v
 ```
 
-## Packaging (Windows executable)
+## Windows package
 
-```bash
-pip install pyinstaller
-pyinstaller --noconfirm --windowed --name "BRUTA-X" main.py
-```
+See [WINDOWS_BUILD.md](WINDOWS_BUILD.md) and `build_windows.bat`.
 
-Optional data folder beside the exe for `data/settings.json` and `data/bruta_x.db`.
+Code signing is an organizational release step — not performed in CI.
 
-## Authorization policy
+## Security
 
-- Port and network scans require an explicit confirmation checkbox.
-- Network scanner defaults to **private/loopback ranges only**.
-- No credential theft, malware, stealth scan modes, or exploitation features.
+See [SECURITY.md](SECURITY.md). Active scans require explicit authorization. Do not target systems without permission.
 
-## Project layout
+## Documentation
 
-```
-bruta_x/
-  main.py
-  requirements.txt
-  README.md
-  STATUS.md
-  app/
-    application.py
-    config.py
-    database.py
-    logging_config.py
-    modules/
-    services/
-    ui/
-  tests/
-  data/          # created at runtime
-```
+| Doc | Purpose |
+|-----|---------|
+| [USER_GUIDE.md](USER_GUIDE.md) | Operator basics |
+| [ENTERPRISE_GUIDE.md](ENTERPRISE_GUIDE.md) | RBAC / projects / API |
+| [API_DOCUMENTATION.md](API_DOCUMENTATION.md) | Local REST API |
+| [BACKUP_RECOVERY.md](BACKUP_RECOVERY.md) | Backup/restore |
+| [LICENSING.md](LICENSING.md) | Editions |
+| [FINAL_QUALITY_AUDIT.md](FINAL_QUALITY_AUDIT.md) | Quality audit |
+| [FINAL_RELEASE_REPORT.md](FINAL_RELEASE_REPORT.md) | Release honesty report |
+| [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) | Ship checklist |
 
 ## License / use
 
-Authorized testing and lab use only. You are responsible for compliance with local law and target authorization.
-
-## Phase 4
-See STATUS.md, USER_GUIDE.md, WINDOWS_BUILD.md, PHASE4_CHANGELOG.md.
-
+Authorized testing and lab use only. You are responsible for compliance with law and target authorization.
