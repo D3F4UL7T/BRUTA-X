@@ -316,35 +316,51 @@ class NetworkScanPage(QWidget):
         )
 
 
+
 class OsintPage(QWidget):
     def __init__(self):
         super().__init__()
+        from app.modules import osint as osint_mod
+        self.osint = osint_mod
         lay = QVBoxLayout(self)
-        row = QHBoxLayout()
-        self.ip = QLineEdit()
-        self.ip.setPlaceholderText("1.1.1.1")
-        btn = QPushButton("IP lookup")
+        form = QFormLayout()
+        self.query = QLineEdit()
+        self.query.setPlaceholderText("IP, domain, or username")
+        self.mode = QLineEdit("ip")
+        self.mode.setPlaceholderText("ip | username | domain | ssl | subs")
+        form.addRow("Query", self.query)
+        form.addRow("Mode", self.mode)
+        lay.addLayout(form)
+        btn = QPushButton("Run OSINT")
         btn.setObjectName("Primary")
         btn.clicked.connect(self._run)
-        row.addWidget(self.ip, 1)
-        row.addWidget(btn)
-        lay.addLayout(row)
-        note = QLabel("Uses public ipapi.co when network is available. No fabricated data.")
+        lay.addWidget(btn)
+        note = QLabel("Public sources only. Rate limits may apply. No private account access.")
         note.setObjectName("Subtitle")
         lay.addWidget(note)
         self.out = QPlainTextEdit()
         self.out.setReadOnly(True)
         lay.addWidget(self.out)
 
-    def _run(self) -> None:
-        ip = self.ip.text().strip()
-        result = ip_lookup(ip)
-        self.out.setPlainText(
-            "\n".join(f"{k}: {v}" for k, v in (result.get('data') or result).items())
-            if result.get("ok")
-            else f"Error: {result.get('error')}"
-        )
-        complete_run("osint", ip, "ok" if result.get("ok") else "error", str(result.get("error") or "ip lookup"), result)
+    def _run(self):
+        import json
+        q = self.query.text().strip()
+        mode = (self.mode.text() or "ip").strip().lower()
+        if mode == "ip":
+            result = self.osint.ip_lookup(q)
+        elif mode == "username":
+            result = self.osint.username_search(q)
+        elif mode == "domain":
+            result = self.osint.full_domain_intel(q)
+        elif mode == "ssl":
+            result = self.osint.ssl_certificate(q)
+        elif mode in ("subs", "subdomains"):
+            result = self.osint.passive_subdomains(q)
+        else:
+            QMessageBox.warning(self, "OSINT", "Mode must be ip, username, domain, ssl, or subs")
+            return
+        self.out.setPlainText(json.dumps(result, indent=2, default=str)[:50000])
+        complete_run("osint", q, "ok" if result.get("ok", True) else "error", mode, result)
 
 
 class ReportsPage(QWidget):
@@ -389,3 +405,148 @@ class ReportsPage(QWidget):
                 return
             out = export_html(path)
         QMessageBox.information(self, "Reports", f"Wrote {out}")
+
+
+class VulnPage(QWidget):
+    def __init__(self):
+        super().__init__()
+        from app.modules.vulnerability_scanner import assess_url
+        self._assess = assess_url
+        lay = QVBoxLayout(self)
+        note = QLabel("Non-destructive checks only. Requires authorization confirmation.")
+        note.setObjectName("Subtitle")
+        note.setWordWrap(True)
+        lay.addWidget(note)
+        form = QFormLayout()
+        self.url = QLineEdit()
+        self.url.setPlaceholderText("https://example.com")
+        self.auth = QCheckBox("I am authorized to test this target")
+        form.addRow("URL", self.url)
+        form.addRow("", self.auth)
+        lay.addLayout(form)
+        btn = QPushButton("Run assessment")
+        btn.setObjectName("Primary")
+        btn.clicked.connect(self._run)
+        lay.addWidget(btn)
+        self.table = QTableWidget(0, 4)
+        self.table.setHorizontalHeaderLabels(["Severity", "Title", "Evidence", "Remediation"])
+        self.table.horizontalHeader().setStretchLastSection(True)
+        lay.addWidget(self.table)
+        self.err = QLabel("")
+        self.err.setObjectName("Subtitle")
+        lay.addWidget(self.err)
+
+    def _run(self):
+        report = self._assess(self.url.text().strip(), authorized=self.auth.isChecked())
+        d = report.to_dict()
+        if report.errors:
+            self.err.setText("; ".join(report.errors))
+        else:
+            self.err.setText("")
+        self.table.setRowCount(len(report.findings))
+        for i, f in enumerate(report.findings):
+            self.table.setItem(i, 0, QTableWidgetItem(f.severity))
+            self.table.setItem(i, 1, QTableWidgetItem(f.title))
+            self.table.setItem(i, 2, QTableWidgetItem(f.evidence[:200]))
+            self.table.setItem(i, 3, QTableWidgetItem(f.remediation[:200]))
+        complete_run(
+            "vuln",
+            report.target,
+            "error" if report.errors and not report.findings else "ok",
+            f"findings={len(report.findings)}",
+            d,
+        )
+
+
+class NetMonPage(QWidget):
+    def __init__(self):
+        super().__init__()
+        from app.modules.network_monitor import interface_stats, list_connections
+        self._list = list_connections
+        self._ifaces = interface_stats
+        lay = QVBoxLayout(self)
+        row = QHBoxLayout()
+        btn = QPushButton("Refresh")
+        btn.setObjectName("Primary")
+        btn.clicked.connect(self.refresh)
+        row.addWidget(btn)
+        row.addStretch(1)
+        lay.addLayout(row)
+        self.ifaces = QPlainTextEdit()
+        self.ifaces.setReadOnly(True)
+        self.ifaces.setMaximumHeight(120)
+        lay.addWidget(QLabel("Interfaces"))
+        lay.addWidget(self.ifaces)
+        self.table = QTableWidget(0, 5)
+        self.table.setHorizontalHeaderLabels(["Proto", "Local", "Remote", "State", "PID"])
+        self.table.horizontalHeader().setStretchLastSection(True)
+        lay.addWidget(QLabel("Connections"))
+        lay.addWidget(self.table)
+
+    def on_show(self):
+        self.refresh()
+
+    def refresh(self):
+        stats = self._ifaces()
+        self.ifaces.setPlainText(
+            "\n".join(
+                f"{i.get('iface')}: rx={i.get('rx_bytes')} tx={i.get('tx_bytes')}"
+                for i in stats.get("interfaces") or []
+            )
+            or stats.get("note")
+            or str(stats)
+        )
+        data = self._list()
+        rows = data.get("connections") or []
+        self.table.setRowCount(len(rows))
+        for i, c in enumerate(rows):
+            for j, k in enumerate(("proto", "local", "remote", "state", "pid")):
+                self.table.setItem(i, j, QTableWidgetItem(str(c.get(k) or "")))
+
+
+class AIPage(QWidget):
+    def __init__(self):
+        super().__init__()
+        from app.modules.ai_assistant import assist
+        self._assist = assist
+        lay = QVBoxLayout(self)
+        note = QLabel(
+            "Offline explanations by default. Remote mode is optional and never sends passwords or file hashes."
+        )
+        note.setObjectName("Subtitle")
+        note.setWordWrap(True)
+        lay.addWidget(note)
+        form = QFormLayout()
+        self.kind = QLineEdit("summary")
+        self.kind.setPlaceholderText("vuln | dns | ports | summary")
+        self.remote = QCheckBox("Use remote provider (requires BRUTA_AI_KEY)")
+        form.addRow("Kind", self.kind)
+        form.addRow("", self.remote)
+        lay.addLayout(form)
+        self.ctx = QPlainTextEdit()
+        self.ctx.setPlaceholderText("Optional JSON context from a scan (non-sensitive)")
+        lay.addWidget(self.ctx)
+        btn = QPushButton("Assist")
+        btn.setObjectName("Primary")
+        btn.clicked.connect(self._run)
+        lay.addWidget(btn)
+        self.out = QPlainTextEdit()
+        self.out.setReadOnly(True)
+        lay.addWidget(self.out)
+
+    def _run(self):
+        import json
+        raw = self.ctx.toPlainText().strip()
+        data = {}
+        if raw:
+            try:
+                data = json.loads(raw)
+            except json.JSONDecodeError:
+                QMessageBox.warning(self, "AI Assistant", "Context must be valid JSON or empty.")
+                return
+        result = self._assist(
+            self.kind.text().strip() or "summary",
+            data,
+            use_remote=self.remote.isChecked(),
+        )
+        self.out.setPlainText(f"[{result.get('mode')}]\n{result.get('text')}")

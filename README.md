@@ -3,7 +3,7 @@
 Professional modular cybersecurity desktop toolkit.
 
 **Publisher:** BRUTA Technologies  
-**Version:** 1.0.0-phase1  
+**Version:** 1.1.0-phase2  
 **Platform:** Windows 10/11 (also runs on Linux with PySide6)  
 **Language:** Python 3.12+  
 **GUI:** PySide6
@@ -23,7 +23,11 @@ Professional modular cybersecurity desktop toolkit.
 | OSINT IP lookup | Done (public API when network allows) |
 | Vulnerability Checks | Not implemented |
 | Network Monitor | Not implemented |
-| AI Assistant | Not implemented (no fabricated answers) |
+| OSINT (username, RDAP, SSL, CT subdomains) | Done |
+| Vulnerability assessment (non-destructive) | Done |
+| Network monitor (connections / iface stats) | Done |
+| AI Assistant (offline + optional remote) | Done |
+| PDF reports (reportlab) | Done |
 
 ## Install
 

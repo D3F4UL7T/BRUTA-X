@@ -75,3 +75,37 @@ h1{{color:#39FF14}}
     p = Path(path)
     p.write_text(doc, encoding="utf-8")
     return str(p.resolve())
+
+
+def export_pdf(path: str, run_id: int | None = None) -> str:
+    """PDF export if reportlab is installed; otherwise raises with clear message."""
+    payload = build_report_payload(run_id)
+    try:
+        from reportlab.lib.pagesizes import letter
+        from reportlab.pdfgen import canvas
+    except ImportError as e:
+        raise RuntimeError(
+            "PDF export requires reportlab. Install: pip install reportlab"
+        ) from e
+    from pathlib import Path as P
+    c = canvas.Canvas(path, pagesize=letter)
+    width, height = letter
+    y = height - 48
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(48, y, "BRUTA X Security Report")
+    y -= 24
+    c.setFont("Helvetica", 10)
+    c.drawString(48, y, f"Version {payload.get('version')}  |  {payload.get('generated_at')}")
+    y -= 28
+    for run in payload.get("runs") or []:
+        if y < 72:
+            c.showPage()
+            y = height - 48
+        line = f"#{run.get('id')} {run.get('ts')} {run.get('module')} {run.get('target')} [{run.get('status')}]"
+        c.drawString(48, y, line[:110])
+        y -= 14
+        summary = str(run.get("summary") or "")[:110]
+        c.drawString(60, y, summary)
+        y -= 18
+    c.save()
+    return str(P(path).resolve())

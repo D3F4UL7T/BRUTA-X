@@ -1,42 +1,35 @@
-# BRUTA X — Status
+# BRUTA X — Status (Phase 2)
 
-## Environment notes (build host)
+**Version:** 1.1.0-phase2
 
-- Python 3.12 available.
-- PySide6 / dnspython could **not** be installed on the build host due to PyPI proxy 502 errors.
-- Core logic and unit tests run without GUI packages.
-- GUI requires `pip install -r requirements.txt` on a machine with working PyPI access.
+## Phase 1 regression
 
-## Feature checklist
+- Core unit tests: password, file hash, DNS, ports, network policy, DB/reports — retained.
 
-### Done and tested (logic)
+## Phase 2 added
 
-- [x] Config + settings persistence paths
-- [x] SQLite events + scan_runs
-- [x] File hashing (chunked SHA-256/512)
-- [x] Password strength auditor (no storage)
-- [x] DNS query (stdlib fallback; dnspython when present)
-- [x] Port scanner TCP connect with auth gate
-- [x] Network private-range gate + interface listing
-- [x] Report JSON/HTML export from DB
-- [x] Unit tests (`tests/test_core.py`)
+| Area | Status | Notes |
+|------|--------|-------|
+| OSINT username / RDAP / SSL / CT subs / IP | Done | Public sources; graceful failures |
+| Vulnerability assessment | Done | Non-destructive headers/TLS/cookies/listing |
+| Network monitor | Done | ss/netstat + /proc/net/dev when available |
+| AI assistant | Done | Offline default; optional remote; sanitizes secrets |
+| PDF reports | Done | Requires `reportlab` |
+| UI pages for vuln/netmon/AI/OSINT modes | Done | Needs PySide6 at runtime |
 
-### Implemented in source (needs PySide6 to run UI)
-
-- [x] Main window, sidebar, stacked pages, theme
-- [x] Dashboard / File / Password / DNS / Port / Network / OSINT / Reports pages
-
-### Incomplete
-
-- [ ] Vulnerability scanner module
-- [ ] Network monitor module
-- [ ] AI assistant module
-- [ ] End-to-end GUI automation tests
-- [ ] Signed Windows installer
-
-## Commands
+## Tests
 
 ```bash
-python -m unittest tests.test_core -v
-python main.py   # after pip install -r requirements.txt
+python -m unittest tests.test_core tests.test_phase2 -v
 ```
+
+## Incomplete / limits
+
+- Topology graph visualization (data only; no canvas graph yet)
+- GUI integration tests (no display on CI host)
+- Signed installer
+- PySide6 may be unavailable on restricted build hosts
+
+## Security policy (unchanged)
+
+No credential theft, malware, exploitation, stealth scanning, or public-range scans by default.

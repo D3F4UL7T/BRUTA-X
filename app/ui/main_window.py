@@ -29,6 +29,9 @@ from app.ui.pages import (
     PlaceholderPage,
     ReportsPage,
     OsintPage,
+    VulnPage,
+    NetMonPage,
+    AIPage,
 )
 
 
@@ -66,11 +69,11 @@ class MainWindow(QMainWindow):
             "dns": DnsPage(),
             "network": NetworkScanPage(),
             "ports": PortScanPage(),
-            "vuln": PlaceholderPage("Vulnerability Checks", "Phase 1: not implemented."),
+            "vuln": VulnPage(),
             "password": PasswordPage(),
             "files": FileAnalyzerPage(),
-            "netmon": PlaceholderPage("Network Monitor", "Phase 1: not implemented."),
-            "ai": PlaceholderPage("AI Assistant", "Phase 1: not implemented (no fabricated answers)."),
+            "netmon": NetMonPage(),
+            "ai": AIPage(),
             "reports": ReportsPage(),
         }
         self._keys = list(self.pages.keys())
